@@ -1,13 +1,19 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\LayananController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\CekLaundryController;
-use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| DEFAULT
+|--------------------------------------------------------------------------
+*/
 Route::get('/', function () {
-    return redirect()->route('login'); // redirect ke route login
+    return redirect()->route('login');
 });
 
 /*
@@ -17,21 +23,24 @@ Route::get('/', function () {
 */
 Route::get('/login', [AuthController::class, 'formLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 /*
 |--------------------------------------------------------------------------
 | ADMIN
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth','role:admin'])->group(function () {
-    Route::get('/dashboard', fn () => view('dashboard.admin'))->name('admin.dashboard');
+Route::middleware(['auth', 'role:admin'])->group(function () {
 
-    // CRUD layanan
+    Route::get('/dashboard', fn () => view('dashboard.admin'))
+        ->name('admin.dashboard');
+
+    // CRUD Layanan (index, create, store, edit, update, destroy)
     Route::resource('layanan', LayananController::class);
 
     // Laporan
-    Route::get('/laporan', [LaporanController::class, 'index']);
+    Route::get('/laporan', [LaporanController::class, 'index'])
+        ->name('laporan.index');
 });
 
 /*
@@ -39,14 +48,18 @@ Route::middleware(['auth','role:admin'])->group(function () {
 | PEGAWAI
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth','role:pegawai'])->group(function () {
-    Route::get('/dashboard-pegawai', fn () => view('dashboard.pegawai'))->name('pegawai.dashboard');
+Route::middleware(['auth', 'role:pegawai'])->group(function () {
 
-    // CRUD transaksi
+    Route::get('/dashboard-pegawai', fn () => view('dashboard.pegawai'))
+        ->name('pegawai.dashboard');
+
+    // CRUD Transaksi
     Route::resource('transaksi', TransaksiController::class);
 
-    // Nota transaksi
-    Route::get('/transaksi/{id}/nota', [TransaksiController::class, 'nota'])->name('transaksi.nota');
+    // Update Status Transaksi
+    Route::patch('/transaksi/{id}/status',
+        [TransaksiController::class, 'updateStatus']
+    )->name('transaksi.updateStatus');
 });
 
 /*
@@ -54,16 +67,8 @@ Route::middleware(['auth','role:pegawai'])->group(function () {
 | PELANGGAN PUBLIK (TANPA LOGIN)
 |--------------------------------------------------------------------------
 */
-Route::get('/cek-laundry', [CekLaundryController::class, 'index'])->name('cek-laundry.form');
-Route::post('/cek-laundry', [CekLaundryController::class, 'cek'])->name('cek-laundry.cek');
+Route::get('/cek-laundry', [CekLaundryController::class, 'index'])
+    ->name('cek-laundry.form');
 
-Route::middleware(['auth','role:pegawai'])->group(function () {
-    Route::get('/dashboard-pegawai', fn () => view('dashboard.pegawai'))->name('pegawai.dashboard');
-    Route::resource('transaksi', TransaksiController::class);
-
-    // Update status
-    Route::patch('/transaksi/{id}/status', [TransaksiController::class, 'updateStatus'])->name('transaksi.updateStatus');
-
-    // Delete transaksi
-    Route::delete('/transaksi/{id}', [TransaksiController::class, 'destroy'])->name('transaksi.destroy');
-});
+Route::post('/cek-laundry', [CekLaundryController::class, 'cek'])
+    ->name('cek-laundry.cek');
